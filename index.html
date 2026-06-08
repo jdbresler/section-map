@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Section E</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;700&family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --crimson: #A51C30;
+    --crimson-dark: #7a1222;
+    --crimson-light: #fbeaec;
+    --black: #1a1917;
+    --surface: #ffffff;
+    --bg: #fafaf8;
+    --border: #e8e6e0;
+    --border-strong: #1a1917;
+    --muted: #888780;
+    --radius: 0px;
+    --radius-sm: 0px;
+    --font: 'Lato', system-ui, sans-serif;
+    --font-serif: 'EB Garamond', Georgia, serif;
+  }
+
+  body { font-family: var(--font); background: var(--bg); color: var(--black); min-height: 100vh; }
+
+  /* ── Loading ── */
+  #loading { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; color: var(--muted); z-index: 200; }
+
+  /* ── Login ── */
+  #login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+  #login-box { background: var(--surface); border: 1px solid var(--border); border-top: 4px solid var(--crimson); padding: 0 0 2rem; width: 360px; text-align: center; overflow: hidden; }
+  #login-header { background: var(--crimson); padding: 2rem 2rem 1.5rem; margin-bottom: 1.75rem; }
+  #login-shield { margin: 0 auto 1rem; display: block; }
+  #login-box h1 { font-family: var(--font-serif); font-size: 1.9rem; font-weight: 700; letter-spacing: -0.01em; color: #fff; margin-bottom: 0.2rem; }
+  #login-box .subtitle { font-size: 0.7rem; color: rgba(255,255,255,0.7); letter-spacing: 0.1em; text-transform: uppercase; }
+  #login-body { padding: 0 2rem; }
+  #login-prompt { font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem; letter-spacing: 0.04em; text-transform: uppercase; border-top: 1px solid var(--border); padding-top: 1.25rem; }
+  #login-box input { width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: 0; font-size: 1rem; font-family: var(--font); outline: none; margin-bottom: 0.75rem; background: var(--bg); }
+  #login-box input:focus { border-color: var(--crimson); box-shadow: 0 0 0 3px var(--crimson-light); }
+  #login-error { color: var(--crimson); font-size: 0.8rem; margin-bottom: 0.75rem; display: none; font-weight: 700; }
+  .btn-primary { width: 100%; padding: 0.75rem; background: var(--crimson); color: #fff; border: none; font-size: 0.8rem; font-weight: 700; font-family: var(--font); cursor: pointer; letter-spacing: 0.1em; text-transform: uppercase; transition: background 0.15s; }
+  .btn-primary:hover { background: var(--crimson-dark); }
+
+  /* ── App ── */
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+
+  /* ── Header ── */
+  header { background: var(--surface); border-bottom: 4px solid var(--crimson); padding: 0.75rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; position: sticky; top: 0; z-index: 10; }
+  .header-left { display: flex; align-items: center; gap: 0.75rem; }
+  .header-left h1 { font-family: var(--font-serif); font-size: 1.35rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; }
+  .header-left p { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 1px; }
+  .header-right { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .stat-pill { background: var(--bg); border: 1px solid var(--border); padding: 0.28rem 0.7rem; font-size: 0.75rem; white-space: nowrap; }
+  .stat-pill strong { font-weight: 900; color: var(--crimson); }
+
+  /* ── Map ── */
+  #map-section { background: #d0e8f5; position: relative; overflow: hidden; border-bottom: 2px solid var(--border); }
+  #map-svg { display: block; width: 100%; height: auto; max-height: 55vh; }
+  #map-zoom-controls { position: absolute; bottom: 10px; right: 10px; display: flex; flex-direction: column; gap: 3px; z-index: 20; }
+  #map-zoom-controls button { width: 28px; height: 28px; background: white; border: 1px solid var(--border); font-size: 1rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--black); font-family: var(--font); }
+  #map-zoom-controls button:hover { background: var(--crimson-light); border-color: var(--crimson); color: var(--crimson); }
+
+  /* ── Tooltip ── */
+  #map-tooltip { position: absolute; background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--crimson); padding: 0.65rem 0.85rem; font-size: 0.8rem; pointer-events: none; display: none; z-index: 30; max-width: 210px; }
+  #map-tooltip .tt-name { font-weight: 900; font-size: 0.85rem; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+  #map-tooltip .tt-loc { color: var(--muted); margin-bottom: 4px; font-size: 0.75rem; }
+  #map-tooltip .tt-divider { border-top: 1px solid var(--border); margin: 5px 0; }
+  #map-tooltip .tt-row { margin-bottom: 2px; font-size: 0.75rem; }
+  #map-tooltip .tt-open-yes { color: var(--crimson); font-weight: 700; }
+  #map-tooltip .tt-open-no { color: var(--muted); }
+  .map-pin { cursor: pointer; }
+
+  /* ── Controls ── */
+  #controls { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0.65rem 1.25rem; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+  #controls input[type=text], #controls select { padding: 0.45rem 0.75rem; border: 1px solid var(--border); font-size: 0.83rem; font-family: var(--font); background: var(--bg); outline: none; border-radius: 0; }
+  #controls input[type=text]:focus, #controls select:focus { border-color: var(--crimson); box-shadow: 0 0 0 3px var(--crimson-light); }
+  #search-input { flex: 1; min-width: 140px; }
+  .btn-add { padding: 0.45rem 1rem; background: var(--crimson); color: #fff; border: none; font-size: 0.8rem; font-weight: 700; font-family: var(--font); cursor: pointer; white-space: nowrap; letter-spacing: 0.05em; text-transform: uppercase; transition: background 0.15s; margin-left: auto; }
+  .btn-add:hover { background: var(--crimson-dark); }
+
+  /* ── Cards ── */
+  #card-grid { padding: 1rem 1.25rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.75rem; }
+  .person-card { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid transparent; padding: 0.9rem 1rem; cursor: pointer; transition: border-top-color 0.15s; }
+  .person-card:hover { border-top-color: var(--crimson); }
+  .person-card.highlighted { border-top-color: var(--crimson); outline: 2px solid var(--crimson-light); }
+  .card-top { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.5rem; }
+  .avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.82rem; flex-shrink: 0; overflow: hidden; border: 2px solid var(--border); }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .card-name { font-weight: 900; font-size: 0.875rem; letter-spacing: 0.01em; text-transform: uppercase; }
+  .card-loc { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+  .card-note { font-size: 0.78rem; color: var(--black); margin: 0.35rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-style: italic; }
+  .card-contacts { font-size: 0.72rem; color: var(--muted); margin-top: 0.3rem; }
+  .card-contacts a { color: var(--crimson); text-decoration: none; }
+  .card-contacts a:hover { text-decoration: underline; }
+  .badge { display: inline-block; font-size: 0.68rem; font-weight: 700; padding: 2px 8px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .badge-open { background: var(--crimson); color: #fff; }
+  .badge-closed { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+  .card-action-btn { background: none; border: none; cursor: pointer; font-size: 0.8rem; padding: 2px 4px; opacity: 0.4; transition: opacity 0.15s; }
+  .card-action-btn:hover { opacity: 1; }
+  .card-action-delete:hover { color: var(--crimson); }
+  #empty-state { grid-column: 1/-1; text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 0.9rem; }
+
+  /* ── Modal ── */
+  #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+  #modal-overlay.open { display: flex; }
+  #modal { background: var(--surface); border-top: 4px solid var(--crimson); padding: 1.75rem 1.5rem; width: 100%; max-width: 440px; max-height: 92vh; overflow-y: auto; }
+  #modal h2 { font-family: var(--font-serif); font-size: 1.3rem; font-weight: 700; margin-bottom: 1.25rem; }
+  .field { margin-bottom: 0.9rem; }
+  .field label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .field input, .field select, .field textarea { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: 0; font-size: 0.9rem; font-family: var(--font); background: var(--bg); outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--crimson); box-shadow: 0 0 0 3px var(--crimson-light); }
+  .field textarea { resize: vertical; min-height: 64px; }
+  .field-hint { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+  /* ── Photo upload ── */
+  #photo-upload-area { border: 2px dashed var(--border); padding: 1rem; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; background: var(--bg); }
+  #photo-upload-area:hover, #photo-upload-area.drag-over { border-color: var(--crimson); background: var(--crimson-light); }
+  #photo-upload-area input[type=file] { display: none; }
+  #photo-preview-wrap { display: none; flex-direction: column; align-items: center; gap: 8px; }
+  #photo-preview { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid var(--crimson); }
+  #photo-clear { background: none; border: none; color: var(--crimson); font-size: 0.75rem; cursor: pointer; text-decoration: underline; font-family: var(--font); }
+  .upload-icon { font-size: 1.5rem; margin-bottom: 4px; }
+  .upload-label { font-size: 0.78rem; color: var(--muted); }
+  .upload-label strong { color: var(--crimson); }
+
+  .modal-actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 1.25rem; }
+  .btn-cancel { padding: 0.55rem 1rem; background: transparent; border: 1px solid var(--border-strong); font-size: 0.85rem; font-family: var(--font); cursor: pointer; color: var(--black); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; font-size: 0.78rem; }
+  .btn-cancel:hover { background: var(--bg); }
+  .btn-save { padding: 0.55rem 1.25rem; background: var(--crimson); color: #fff; border: none; font-size: 0.78rem; font-weight: 700; font-family: var(--font); cursor: pointer; transition: background 0.15s; text-transform: uppercase; letter-spacing: 0.06em; }
+  .btn-save:hover { background: var(--crimson-dark); }
+  .btn-save:disabled { opacity: 0.5; cursor: default; }
+  #save-status { font-size: 0.78rem; color: var(--muted); margin-top: 0.5rem; text-align: right; min-height: 1.2em; }
+
+  @media (max-width: 500px) {
+    .field-row { grid-template-columns: 1fr; }
+    #card-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 360px) { #card-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div id="loading">Loading…</div>
+
+<!-- HBS-inspired shield SVG (reusable) -->
+<svg id="hbs-shield-def" style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="hbs-shield" viewBox="0 0 60 72">
+    <path d="M30 2 L58 12 L58 42 C58 56 44 66 30 70 C16 66 2 56 2 42 L2 12 Z" fill="#A51C30" stroke="#7a1222" stroke-width="1.5"/>
+    <path d="M30 6 L54 15 L54 42 C54 54 42 63 30 67 C18 63 6 54 6 42 L6 15 Z" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+    <line x1="6" y1="28" x2="54" y2="28" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <rect x="11" y="30" width="38" height="20" fill="rgba(0,0,0,0.15)" rx="0"/>
+    <text x="30" y="22" text-anchor="middle" font-family="EB Garamond, Georgia, serif" font-size="9" font-weight="700" fill="white" letter-spacing="2">HBS</text>
+    <text x="18" y="41" text-anchor="middle" font-family="Georgia, serif" font-size="7" fill="rgba(255,255,255,0.9)">VE</text>
+    <text x="30" y="41" text-anchor="middle" font-family="Georgia, serif" font-size="7" fill="rgba(255,255,255,0.9)">RI</text>
+    <text x="42" y="41" text-anchor="middle" font-family="Georgia, serif" font-size="7" fill="rgba(255,255,255,0.9)">TAS</text>
+    <rect x="13" y="44" width="10" height="8" rx="0" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+    <rect x="25" y="44" width="10" height="8" rx="0" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+    <rect x="37" y="44" width="10" height="8" rx="0" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+  </symbol>
+</svg>
+
+<!-- ── Login ── -->
+<div id="login-screen" style="display:none">
+  <div id="login-box">
+    <div id="login-header">
+      <svg id="login-shield" width="64" height="77" viewBox="0 0 60 72"><use href="#hbs-shield"/></svg>
+      <h1>Section E</h1>
+      <div class="subtitle">Harvard Business School &nbsp;·&nbsp; Class of 2006</div>
+    </div>
+    <div id="login-body">
+      <div id="login-prompt">Enter section password</div>
+      <div id="login-error">Incorrect password — please try again</div>
+      <input id="pw-input" type="password" placeholder="Password" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')checkPassword()">
+      <button class="btn-primary" onclick="checkPassword()">Enter</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── App ── -->
+<div id="app">
+  <header>
+    <div class="header-left">
+      <svg width="34" height="41" viewBox="0 0 60 72"><use href="#hbs-shield"/></svg>
+      <div>
+        <h1>Section E</h1>
+        <p>Harvard Business School · Class of 2006</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="stat-pill"><strong id="stat-total">0</strong> pinned</div>
+      <div class="stat-pill"><strong id="stat-open">0</strong> open to visits</div>
+      <div class="stat-pill"><strong id="stat-cities">0</strong> cities</div>
+    </div>
+  </header>
+
+  <div id="map-section">
+    <svg id="map-svg" viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="cursor:grab">
+      <rect width="1000" height="500" fill="#d0e8f5"/>
+      <g id="land-layer"></g>
+      <g id="pin-layer"></g>
+    </svg>
+    <div id="map-zoom-controls">
+      <button id="zoom-in" title="Zoom in">+</button>
+      <button id="zoom-out" title="Zoom out">−</button>
+      <button id="zoom-reset" title="Reset view">⊙</button>
+    </div>
+    <div id="map-tooltip"></div>
+  </div>
+
+  <div id="controls">
+    <input id="search-input" type="text" placeholder="Search name or city…" oninput="renderAll()">
+    <select id="filter-select" onchange="renderAll()">
+      <option value="all">All classmates</option>
+      <option value="open">Open to visits</option>
+    </select>
+    <button class="btn-add" onclick="openModal()">+ Add my location</button>
+  </div>
+
+  <div id="card-grid"></div>
+</div>
+
+<!-- ── Modal ── -->
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div id="modal">
+    <h2 id="modal-title">Add your location</h2>
+
+    <!-- Photo upload -->
+    <div class="field">
+      <label>Headshot (optional)</label>
+      <div id="photo-upload-area" onclick="document.getElementById('photo-file').click()"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="handlePhotoDrop(event)">
+        <input type="file" id="photo-file" accept="image/*" onchange="handlePhotoSelect(event)">
+        <div id="photo-prompt">
+          <div class="upload-icon">📷</div>
+          <div class="upload-label"><strong>Click or drag</strong> a photo here</div>
+          <div class="upload-label" style="margin-top:2px;font-size:0.68rem;">Will appear as your map pin & card avatar</div>
+        </div>
+        <div id="photo-preview-wrap">
+          <img id="photo-preview" src="" alt="Preview">
+          <button id="photo-clear" onclick="event.stopPropagation();clearPhoto()">Remove photo</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field"><label>First name *</label><input id="f-first" type="text" placeholder="Alex"></div>
+      <div class="field"><label>Last name *</label><input id="f-last" type="text" placeholder="Kim"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>City *</label><input id="f-city" type="text" placeholder="Tokyo"></div>
+      <div class="field"><label>Country *</label><input id="f-country" type="text" placeholder="Japan"></div>
+    </div>
+    <div class="field">
+      <label>State / Region <span style="font-weight:400;text-transform:none;font-size:0.68rem">(optional — helps for US cities)</span></label>
+      <input id="f-state" type="text" placeholder="e.g. MA, California, Ontario">
+    </div>
+    <div class="field"><label>Email (optional)</label><input id="f-email" type="email" placeholder="you@email.com"></div>
+    <div class="field">
+      <label>Mobile (optional)</label>
+      <input id="f-mobile" type="tel" placeholder="+1 555 000 0000">
+      <div class="field-hint">Visible only to section members</div>
+    </div>
+    <div class="field">
+      <label>Open to classmates visiting?</label>
+      <select id="f-open">
+        <option value="yes">Yes — reach out when you're in town!</option>
+        <option value="no">Not at the moment</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Note (optional)</label>
+      <textarea id="f-note" placeholder="e.g. Happy to grab coffee or show you around"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" id="save-btn" onclick="savePin()">Save pin</button>
+    </div>
+    <div id="save-status"></div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAagYJa-YAyI1NC4qu1fTyehZKxvYvsvjQ",
+    authDomain: "section-e-9fe76.firebaseapp.com",
+    databaseURL: "https://section-e-9fe76-default-rtdb.firebaseio.com",
+    projectId: "section-e-9fe76",
+    storageBucket: "section-e-9fe76.firebasestorage.app",
+    messagingSenderId: "605196122406",
+    appId: "1:605196122406:web:9651dcfeaca921575269e7",
+    measurementId: "G-B7XK8E9G2T"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  window._db = db;
+  window._ref = ref;
+  window._push = push;
+  window._onValue = onValue;
+  window._update = update;
+  window._remove = remove;
+
+  // ── Password ── change this to your section password
+  const SITE_PASSWORD = "paulmarshall";
+  const SESSION_KEY = "section_map_auth";
+
+  function checkPassword() {
+    const val = document.getElementById("pw-input").value;
+    if (val === SITE_PASSWORD) {
+      sessionStorage.setItem(SESSION_KEY, "1");
+      showApp();
+    } else {
+      document.getElementById("login-error").style.display = "block";
+      document.getElementById("pw-input").value = "";
+      document.getElementById("pw-input").focus();
+    }
+  }
+  window.checkPassword = checkPassword;
+
+  function showApp() {
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("app").style.display = "flex";
+    startApp();
+  }
+
+  function boot() {
+    document.getElementById("loading").style.display = "none";
+    if (sessionStorage.getItem(SESSION_KEY) === "1") showApp();
+    else document.getElementById("login-screen").style.display = "flex";
+  }
+
+  // ── Photo handling ────────────────────────────────────────
+  let currentPhotoBase64 = null;
+
+  function handlePhotoSelect(ev) {
+    const file = ev.target.files[0];
+    if (file) processPhoto(file);
+  }
+  window.handlePhotoSelect = handlePhotoSelect;
+
+  function handlePhotoDrop(ev) {
+    ev.preventDefault();
+    document.getElementById("photo-upload-area").classList.remove("drag-over");
+    const file = ev.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) processPhoto(file);
+  }
+  window.handlePhotoDrop = handlePhotoDrop;
+
+  function processPhoto(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        // Resize to max 120px square to keep Firebase storage small
+        const canvas = document.createElement("canvas");
+        const size = 120;
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        const min = Math.min(img.width, img.height);
+        const sx = (img.width - min) / 2, sy = (img.height - min) / 2;
+        ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+        currentPhotoBase64 = canvas.toDataURL("image/jpeg", 0.6);
+        document.getElementById("photo-preview").src = currentPhotoBase64;
+        document.getElementById("photo-prompt").style.display = "none";
+        document.getElementById("photo-preview-wrap").style.display = "flex";
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearPhoto() {
+    currentPhotoBase64 = null;
+    document.getElementById("photo-file").value = "";
+    document.getElementById("photo-preview").src = "";
+    document.getElementById("photo-prompt").style.display = "block";
+    document.getElementById("photo-preview-wrap").style.display = "none";
+  }
+  window.clearPhoto = clearPhoto;
+
+  // ── Map ────────────────────────────────────────────────────
+  function lngLatToXY(lng, lat) {
+    return [((lng + 180) / 360) * 1000, ((90 - lat) / 180) * 500];
+  }
+
+  async function loadMap() {
+    try {
+      const r = await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
+      const world = await r.json();
+      const topoLib = await import("https://cdn.jsdelivr.net/npm/topojson-client@3/+esm");
+      const countries = topoLib.feature(world, world.objects.countries);
+      const layer = document.getElementById("land-layer");
+      for (const feat of countries.features) {
+        const rings = feat.geometry.type === "Polygon" ? [feat.geometry.coordinates] : feat.geometry.coordinates;
+        let d = "";
+        for (const poly of rings) {
+          for (const ring of poly) {
+            ring.forEach(([lng, lat], i) => {
+              const [x, y] = lngLatToXY(lng, lat);
+              d += (i === 0 ? "M" : "L") + x.toFixed(1) + "," + y.toFixed(1);
+            });
+            d += "Z";
+          }
+        }
+        const path = document.createElementNS("http://www.w3.org/2000/svg","path");
+        path.setAttribute("d", d);
+        path.setAttribute("fill", "#d4e8c0");
+        path.setAttribute("stroke", "#fff");
+        path.setAttribute("stroke-width", "0.5");
+        layer.appendChild(path);
+      }
+    } catch(e) { console.warn("Map load failed", e); }
+    boot();
+  }
+
+  // ── Data ──────────────────────────────────────────────────
+  let allPins = [];
+
+  function startApp() {
+    window._onValue(window._ref(window._db, "pins"), snap => {
+      allPins = [];
+      if (snap.exists()) snap.forEach(child => allPins.push({ id: child.key, ...child.val() }));
+      renderAll();
+    });
+  }
+  window.startApp = startApp;
+
+  // ── Geocode ───────────────────────────────────────────────
+  async function geocode(city, state, country) {
+    try {
+      const q = encodeURIComponent([city, state, country].filter(Boolean).join(" "));
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, { headers: { "Accept-Language": "en" } });
+      const d = await r.json();
+      if (d.length) return [parseFloat(d[0].lat), parseFloat(d[0].lon)];
+    } catch(e) {}
+    return null;
+  }
+
+  // ── Save ──────────────────────────────────────────────────
+  async function savePin() {
+    const first = document.getElementById("f-first").value.trim();
+    const last  = document.getElementById("f-last").value.trim();
+    const city  = document.getElementById("f-city").value.trim();
+    const state = document.getElementById("f-state").value.trim();
+    const country = document.getElementById("f-country").value.trim();
+    if (!first || !last || !city || !country) {
+      document.getElementById("save-status").textContent = "Please fill in name, city, and country.";
+      return;
+    }
+    const btn = document.getElementById("save-btn");
+    btn.disabled = true;
+    const statusEl = document.getElementById("save-status");
+    statusEl.style.color = "";
+    statusEl.textContent = "Locating city…";
+
+    const coords = await geocode(city, state, country);
+    const lat = coords ? coords[0] : (Math.random() * 100 - 30);
+    const lng = coords ? coords[1] : (Math.random() * 300 - 150);
+
+    // Check photo size — Firebase nodes have limits; keep under 500KB base64
+    let photo = currentPhotoBase64 || null;
+    if (photo && photo.length > 500000) {
+      statusEl.textContent = "Photo too large — please use a smaller image.";
+      statusEl.style.color = "#A51C30";
+      btn.disabled = false;
+      return;
+    }
+
+    const pin = {
+      first, last, city, state, country, lat, lng,
+      email: document.getElementById("f-email").value.trim(),
+      mobile: document.getElementById("f-mobile").value.trim(),
+      open: document.getElementById("f-open").value,
+      note: document.getElementById("f-note").value.trim(),
+      photo: photo,
+    };
+
+    try {
+      if (editingId) {
+        await window._update(window._ref(window._db, "pins/" + editingId), pin);
+        statusEl.textContent = "Updated!";
+      } else {
+        pin.added = Date.now();
+        await window._push(window._ref(window._db, "pins"), pin);
+        statusEl.textContent = "Pin saved!";
+      }
+      setTimeout(() => { closeModal(); statusEl.textContent = ""; }, 900);
+    } catch(e) {
+      console.error("Firebase save error:", e);
+      statusEl.textContent = "Error saving: " + (e.message || "check Firebase setup");
+      statusEl.style.color = "#A51C30";
+    }
+    btn.disabled = false;
+  }
+  window.savePin = savePin;
+
+  // ── Render ────────────────────────────────────────────────
+  function initials(first, last) { return ((first[0]||"") + (last[0]||"")).toUpperCase(); }
+
+  function filtered() {
+    const q = document.getElementById("search-input").value.toLowerCase();
+    const f = document.getElementById("filter-select").value;
+    return allPins.filter(p => {
+      if (f === "open" && p.open !== "yes") return false;
+      if (q && !`${p.first} ${p.last} ${p.city} ${p.country}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }
+
+  function renderAll() {
+    const pins = filtered();
+    renderPins(pins);
+    renderCards(pins);
+    updateStats();
+  }
+  window.renderAll = renderAll;
+
+  function updateStats() {
+    document.getElementById("stat-total").textContent = allPins.length;
+    document.getElementById("stat-open").textContent = allPins.filter(p => p.open === "yes").length;
+    document.getElementById("stat-cities").textContent = new Set(allPins.map(p => p.city.toLowerCase())).size;
+  }
+
+  // ── Clustering helpers ────────────────────────────────────
+  let spideredCluster = null;
+
+  function buildClusters(pins) {
+    // Group first by city+country key so only same-city pins cluster together
+    const cityMap = new Map();
+    for (const p of pins) {
+      const key = (p.city + "|" + p.country).toLowerCase();
+      if (!cityMap.has(key)) cityMap.set(key, []);
+      cityMap.get(key).push(p);
+    }
+    const clusters = [];
+    for (const [, group] of cityMap) {
+      // Use the average lat/lng of the group as the cluster center
+      const avgLng = group.reduce((s, p) => s + p.lng, 0) / group.length;
+      const avgLat = group.reduce((s, p) => s + p.lat, 0) / group.length;
+      const [cx, cy] = lngLatToXY(avgLng, avgLat);
+      clusters.push({ cx, cy, pins: group });
+    }
+    return clusters;
+  }
+
+  function makePinElement(p, defs, scale) {
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "map-pin");
+    const r = 11 * (scale||1);
+    if (p.photo) {
+      const clipId = "clip-" + p.id;
+      let cp = defs.querySelector("#" + clipId);
+      if (!cp) {
+        cp = document.createElementNS("http://www.w3.org/2000/svg","clipPath");
+        cp.setAttribute("id", clipId);
+        const cc = document.createElementNS("http://www.w3.org/2000/svg","circle");
+        cc.setAttribute("cx","0"); cc.setAttribute("cy","0"); cc.setAttribute("r", String(r));
+        cp.appendChild(cc); defs.appendChild(cp);
+      }
+      const oc = document.createElementNS("http://www.w3.org/2000/svg","circle");
+      oc.setAttribute("r", String(r+1));
+      oc.setAttribute("fill", p.open==="yes" ? "#A51C30" : "#888780");
+      oc.setAttribute("stroke","#fff"); oc.setAttribute("stroke-width","1.5");
+      const img = document.createElementNS("http://www.w3.org/2000/svg","image");
+      img.setAttribute("href", p.photo);
+      img.setAttribute("x", String(-r)); img.setAttribute("y", String(-r));
+      img.setAttribute("width", String(r*2)); img.setAttribute("height", String(r*2));
+      img.setAttribute("clip-path", `url(#${clipId})`);
+      img.setAttribute("preserveAspectRatio","xMidYMid slice");
+      g.appendChild(oc); g.appendChild(img);
+    } else {
+      const circle = document.createElementNS("http://www.w3.org/2000/svg","circle");
+      circle.setAttribute("r", String(r));
+      circle.setAttribute("fill", p.open==="yes" ? "#A51C30" : "#e8e6df");
+      circle.setAttribute("stroke", p.open==="yes" ? "#7a1222" : "#a09e96");
+      circle.setAttribute("stroke-width","1.5");
+      const txt = document.createElementNS("http://www.w3.org/2000/svg","text");
+      txt.setAttribute("text-anchor","middle"); txt.setAttribute("dominant-baseline","central");
+      txt.setAttribute("font-size", String(7*(scale||1))); txt.setAttribute("font-weight","900");
+      txt.setAttribute("font-family","Lato, sans-serif");
+      txt.setAttribute("fill", p.open==="yes" ? "#fff" : "#6b6860");
+      txt.textContent = initials(p.first, p.last);
+      g.appendChild(circle); g.appendChild(txt);
+    }
+    return g;
+  }
+
+  function renderPins(pins) {
+    const layer = document.getElementById("pin-layer");
+    layer.innerHTML = "";
+    spideredCluster = null;
+    let defs = document.getElementById("pin-defs");
+    if (!defs) {
+      defs = document.createElementNS("http://www.w3.org/2000/svg","defs");
+      defs.id = "pin-defs";
+      document.getElementById("map-svg").appendChild(defs);
+    }
+    defs.innerHTML = "";
+
+    const clusters = buildClusters(pins);
+
+    for (const cluster of clusters) {
+      const { cx, cy, pins: cPins } = cluster;
+      const clusterG = document.createElementNS("http://www.w3.org/2000/svg","g");
+      clusterG.setAttribute("transform", `translate(${cx},${cy})`);
+      clusterG._clusterPins = cPins;
+      clusterG._cx = cx; clusterG._cy = cy;
+
+      if (cPins.length === 1) {
+        // Single pin — render normally
+        const pg = makePinElement(cPins[0], defs, 1);
+        pg.addEventListener("mouseenter", ev => showTooltip(ev, cPins[0]));
+        pg.addEventListener("mouseleave", hideTooltip);
+        pg.addEventListener("click", () => highlightCard(cPins[0].id));
+        clusterG.appendChild(pg);
+      } else {
+        // Cluster badge — crimson with count
+        const badgeCircle = document.createElementNS("http://www.w3.org/2000/svg","circle");
+        badgeCircle.setAttribute("r","14");
+        badgeCircle.setAttribute("fill","#A51C30");
+        badgeCircle.setAttribute("stroke","#fff");
+        badgeCircle.setAttribute("stroke-width","2");
+        const badgeText = document.createElementNS("http://www.w3.org/2000/svg","text");
+        badgeText.setAttribute("text-anchor","middle"); badgeText.setAttribute("dominant-baseline","central");
+        badgeText.setAttribute("font-size","9"); badgeText.setAttribute("font-weight","900");
+        badgeText.setAttribute("font-family","Lato, sans-serif"); badgeText.setAttribute("fill","#fff");
+        badgeText.textContent = cPins.length;
+        const cityLabel = document.createElementNS("http://www.w3.org/2000/svg","text");
+        cityLabel.setAttribute("text-anchor","middle"); cityLabel.setAttribute("dominant-baseline","auto");
+        cityLabel.setAttribute("font-size","7"); cityLabel.setAttribute("font-family","Lato, sans-serif");
+        cityLabel.setAttribute("fill","#1a1917"); cityLabel.setAttribute("y","23");
+        cityLabel.textContent = cPins[0].city;
+        clusterG.appendChild(badgeCircle); clusterG.appendChild(badgeText); clusterG.appendChild(cityLabel);
+        clusterG.style.cursor = "pointer";
+
+        clusterG.addEventListener("mouseenter", ev => spiderCluster(ev, clusterG, defs));
+        clusterG.addEventListener("mouseleave", () => collapseSpider(clusterG));
+      }
+      layer.appendChild(clusterG);
+    }
+  }
+
+  // ── Spider / explode cluster ──────────────────────────────
+  function spiderCluster(ev, clusterG, defs) {
+    if (clusterG._spideред) return;
+    clusterG._spideред = true;
+    spideredCluster = clusterG;
+    const cPins = clusterG._clusterPins;
+    const n = cPins.length;
+    // Hide the badge
+    Array.from(clusterG.childNodes).forEach(c => { c._isSpider || (c.style.opacity = "0"); });
+
+    // Fan out radius scales with count
+    const spreadR = Math.min(60, 28 + n * 7);
+    // Start angle offset so first pin is at top
+    const startAngle = -Math.PI / 2;
+
+    cPins.forEach((p, i) => {
+      const angle = startAngle + (2 * Math.PI * i) / n;
+      const tx = Math.round(Math.cos(angle) * spreadR);
+      const ty = Math.round(Math.sin(angle) * spreadR);
+
+      // Spider line
+      const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+      line.setAttribute("x1","0"); line.setAttribute("y1","0");
+      line.setAttribute("x2", String(tx)); line.setAttribute("y2", String(ty));
+      line.setAttribute("stroke","#A51C30"); line.setAttribute("stroke-width","1");
+      line.setAttribute("stroke-dasharray","3 2"); line.setAttribute("opacity","0.5");
+      line._isSpider = true;
+      clusterG.appendChild(line);
+
+      // Individual pin
+      const pg = makePinElement(p, defs, 0.9);
+      pg._isSpider = true;
+      pg.setAttribute("transform", `translate(${tx},${ty})`);
+      pg.style.cursor = "pointer";
+      pg.addEventListener("mouseenter", ev2 => showTooltip(ev2, p));
+      pg.addEventListener("mouseleave", () => { /* keep open while in cluster */ });
+      pg.addEventListener("click", () => highlightCard(p.id));
+      clusterG.appendChild(pg);
+    });
+
+    // Show tooltip for the cluster on the badge itself
+    const mapEl = document.getElementById("map-section");
+    const mr = mapEl.getBoundingClientRect();
+    const x = ev.clientX - mr.left;
+    const y = ev.clientY - mr.top;
+    showClusterTip(x, y, cPins);
+  }
+
+  function collapseSpider(clusterG) {
+    if (!clusterG._spideред) return;
+    clusterG._spideред = false;
+    spideredCluster = null;
+    // Remove spider elements
+    const toRemove = Array.from(clusterG.childNodes).filter(c => c._isSpider);
+    toRemove.forEach(c => clusterG.removeChild(c));
+    // Restore badge
+    Array.from(clusterG.childNodes).forEach(c => { c.style.opacity = "1"; });
+    hideTooltip();
+  }
+
+  function showClusterTip(x, y, cPins) {
+    clearTimeout(hideTimer);
+    const mapEl = document.getElementById("map-section");
+    const mr = mapEl.getBoundingClientRect();
+    const city = cPins[0].city + (cPins[0].state ? ', ' + cPins[0].state : '') + ', ' + cPins[0].country;
+    let html = `<div class="tt-name">${cPins.length} classmates</div>`;
+    html += `<div class="tt-loc">📍 ${city}</div>`;
+    html += `<div class="tt-divider"></div>`;
+    cPins.forEach(p => {
+      html += `<div class="tt-row" style="padding:2px 0">${p.first} ${p.last} <span style="color:${p.open==='yes'?'#A51C30':'#888'};font-size:0.68rem">${p.open==='yes'?'· open':''}</span></div>`;
+    });
+    tip.innerHTML = html;
+    tip.style.display = "block";
+    let left = x + 14, top = y - 10;
+    if (left + 215 > mr.width) left = x - 220;
+    tip.style.left = left + "px"; tip.style.top = top + "px";
+  }
+
+  const tip = document.getElementById("map-tooltip");
+  let hideTimer;
+  function showTooltip(ev, p) {
+    clearTimeout(hideTimer);
+    const mapEl = document.getElementById("map-section");
+    const mr = mapEl.getBoundingClientRect();
+    const x = ev.clientX - mr.left;
+    const y = ev.clientY - mr.top + mapEl.scrollTop;
+    let html = `<div class="tt-name">${p.first} ${p.last}</div>`;
+    html += `<div class="tt-loc">📍 ${p.city}${p.state ? ', ' + p.state : ''}, ${p.country}</div>`;
+    html += `<div class="tt-divider"></div>`;
+    html += `<div class="tt-row ${p.open==='yes'?'tt-open-yes':'tt-open-no'}">${p.open==='yes'?'✓ Open to visits':'Not at the moment'}</div>`;
+    if (p.note) html += `<div class="tt-row" style="margin-top:3px;font-style:italic">"${p.note}"</div>`;
+    tip.innerHTML = html;
+    tip.style.display = "block";
+    let left = x + 14, top = y - 10;
+    if (left + 215 > mr.width) left = x - 220;
+    tip.style.left = left + "px"; tip.style.top = top + "px";
+  }
+  function hideTooltip() { hideTimer = setTimeout(() => { tip.style.display = "none"; }, 150); }
+
+  function renderCards(pins) {
+    const grid = document.getElementById("card-grid");
+    if (!pins.length) { grid.innerHTML = '<div id="empty-state">No classmates found. Be the first to add your pin!</div>'; return; }
+    grid.innerHTML = pins.map(p => {
+      const ini = initials(p.first, p.last);
+      const avatarHtml = p.photo
+        ? `<div class="avatar"><img src="${p.photo}" alt="${p.first}"></div>`
+        : `<div class="avatar" style="background:var(--crimson-light);color:var(--crimson)">${ini}</div>`;
+      let contacts = "";
+      if (p.email) contacts += `<a href="mailto:${p.email}">${p.email}</a>`;
+      if (p.email && p.mobile) contacts += " · ";
+      if (p.mobile) contacts += `<a href="tel:${p.mobile}">${p.mobile}</a>`;
+      return `<div class="person-card" id="card-${p.id}" onclick="highlightCard('${p.id}')">
+        <div class="card-top">
+          ${avatarHtml}
+          <div>
+            <div class="card-name">${p.first} ${p.last}</div>
+            <div class="card-loc">📍 ${p.city}${p.state ? ', ' + p.state : ''}, ${p.country}</div>
+          </div>
+        </div>
+        ${p.note ? `<div class="card-note">"${p.note}"</div>` : ""}
+        ${contacts ? `<div class="card-contacts">${contacts}</div>` : ""}
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px;">
+          <span class="badge ${p.open==='yes'?'badge-open':'badge-closed'}">${p.open==='yes'?'Open to visits':'Not at the moment'}</span>
+          <div style="display:flex;gap:4px;">
+            <button class="card-action-btn" onclick="event.stopPropagation();editPin('${p.id}')" title="Edit">✏️</button>
+            <button class="card-action-btn card-action-delete" onclick="event.stopPropagation();deletePin('${p.id}','${p.first} ${p.last}')" title="Delete">🗑</button>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function highlightCard(id) {
+    document.querySelectorAll(".person-card").forEach(c => c.classList.remove("highlighted"));
+    const card = document.getElementById("card-" + id);
+    if (card) { card.classList.add("highlighted"); card.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+  }
+  window.highlightCard = highlightCard;
+
+  // ── Modal ─────────────────────────────────────────────────
+  let editingId = null;
+
+  function openModal() {
+    editingId = null;
+    currentPhotoBase64 = null;
+    document.getElementById("modal-title").textContent = "Add your location";
+    document.getElementById("save-btn").textContent = "Save pin";
+    clearPhoto();
+    document.getElementById("modal-overlay").classList.add("open");
+    document.getElementById("f-first").focus();
+  }
+  function closeModal() {
+    editingId = null;
+    document.getElementById("modal-overlay").classList.remove("open");
+    ["f-first","f-last","f-city","f-state","f-country","f-email","f-mobile","f-note"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("f-open").value = "yes";
+    document.getElementById("save-status").textContent = "";
+    clearPhoto();
+  }
+  function editPin(id) {
+    const p = allPins.find(x => x.id === id);
+    if (!p) return;
+    editingId = id;
+    document.getElementById("modal-title").textContent = "Edit your location";
+    document.getElementById("save-btn").textContent = "Save changes";
+    document.getElementById("f-first").value = p.first || "";
+    document.getElementById("f-last").value = p.last || "";
+    document.getElementById("f-city").value = p.city || "";
+    document.getElementById("f-state").value = p.state || "";
+    document.getElementById("f-country").value = p.country || "";
+    document.getElementById("f-email").value = p.email || "";
+    document.getElementById("f-mobile").value = p.mobile || "";
+    document.getElementById("f-note").value = p.note || "";
+    document.getElementById("f-open").value = p.open || "yes";
+    if (p.photo) {
+      currentPhotoBase64 = p.photo;
+      document.getElementById("photo-preview").src = p.photo;
+      document.getElementById("photo-prompt").style.display = "none";
+      document.getElementById("photo-preview-wrap").style.display = "flex";
+    } else {
+      clearPhoto();
+    }
+    document.getElementById("modal-overlay").classList.add("open");
+    document.getElementById("f-first").focus();
+  }
+  async function deletePin(id, name) {
+    if (!confirm(`Remove ${name}'s pin from the map?`)) return;
+    try { await window._remove(window._ref(window._db, "pins/" + id)); }
+    catch(e) { alert("Error deleting pin — please try again."); }
+  }
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+  window.editPin = editPin;
+  window.deletePin = deletePin;
+
+  // ── Zoom & Pan ────────────────────────────────────────────
+  let vb = { x: 0, y: 0, w: 1000, h: 500 };
+  function applyViewBox() { document.getElementById("map-svg").setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`); }
+  function zoomMap(factor) {
+    const cx = vb.x + vb.w/2, cy = vb.y + vb.h/2;
+    vb.w = Math.min(1000, Math.max(100, vb.w * factor));
+    vb.h = Math.min(500, Math.max(50, vb.h * factor));
+    vb.x = Math.max(0, Math.min(1000-vb.w, cx-vb.w/2));
+    vb.y = Math.max(0, Math.min(500-vb.h, cy-vb.h/2));
+    applyViewBox();
+  }
+  document.getElementById("zoom-in").addEventListener("click", () => zoomMap(0.6));
+  document.getElementById("zoom-out").addEventListener("click", () => zoomMap(1.6));
+  document.getElementById("zoom-reset").addEventListener("click", () => { vb={x:0,y:0,w:1000,h:500}; applyViewBox(); });
+  document.getElementById("map-svg").addEventListener("wheel", ev => {
+    ev.preventDefault();
+    const svg = document.getElementById("map-svg");
+    const rect = svg.getBoundingClientRect();
+    const mx = (ev.clientX-rect.left)/rect.width, my = (ev.clientY-rect.top)/rect.height;
+    const factor = ev.deltaY > 0 ? 1.25 : 0.8;
+    const newW = Math.min(1000, Math.max(80, vb.w*factor)), newH = Math.min(500, Math.max(40, vb.h*factor));
+    vb.x = Math.max(0, Math.min(1000-newW, vb.x+(vb.w-newW)*mx));
+    vb.y = Math.max(0, Math.min(500-newH, vb.y+(vb.h-newH)*my));
+    vb.w = newW; vb.h = newH; applyViewBox();
+  }, { passive: false });
+  let drag = null;
+  const mapSvg = document.getElementById("map-svg");
+  mapSvg.addEventListener("mousedown", ev => {
+    if (ev.target.closest(".map-pin")) return;
+    drag = { sx: ev.clientX, sy: ev.clientY, vx: vb.x, vy: vb.y };
+    mapSvg.style.cursor = "grabbing";
+  });
+  window.addEventListener("mousemove", ev => {
+    if (!drag) return;
+    const rect = document.getElementById("map-svg").getBoundingClientRect();
+    vb.x = Math.max(0, Math.min(1000-vb.w, drag.vx - (ev.clientX-drag.sx)/rect.width*vb.w));
+    vb.y = Math.max(0, Math.min(500-vb.h, drag.vy - (ev.clientY-drag.sy)/rect.height*vb.h));
+    applyViewBox();
+  });
+  window.addEventListener("mouseup", () => { drag = null; mapSvg.style.cursor = "grab"; });
+
+  loadMap();
+</script>
+</body>
+</html>
